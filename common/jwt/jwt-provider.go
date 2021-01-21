@@ -11,7 +11,7 @@ import (
 CreateToken function for generate Json Web Token
 */
 func CreateToken(user models.User) (string, error) {
-	secretKey := []byte("XDXDXDDDDDDDDDDDDDDDD")
+	secretKey := []byte("MastersdelDesarrollo_grupodeFacebook")
 
 	payload := jwt.MapClaims{
 		"email": user.Email,
@@ -20,7 +20,7 @@ func CreateToken(user models.User) (string, error) {
 		"exp":   time.Now().Add(time.Hour * 24).Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodES256, payload)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
 	tokenStr, err := token.SignedString(secretKey)
 
 	if err != nil {
