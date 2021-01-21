@@ -24,6 +24,7 @@ func CreateUser(u models.User) (string, bool, error) {
 	defer cancel()
 
 	col := db.Collection("users")
+	u.ID = primitive.NewObjectID()
 
 	u.Password, _ = crypt.HashPassword(u.Password)
 	result, err := col.InsertOne(ctx, u)
