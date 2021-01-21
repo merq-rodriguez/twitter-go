@@ -1,4 +1,4 @@
-package httpstatus
+package http
 
 const (
 	CONTINUE                        = 100
