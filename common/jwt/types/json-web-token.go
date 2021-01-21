@@ -1,6 +1,6 @@
-package models
+package types
 
 /*JsonWebToken type struct for response*/
 type JsonWebToken struct {
-	Token string `json: "token, omitempty"`
+	AccessToken string `json: "accessToken, omitempty"`
 }
