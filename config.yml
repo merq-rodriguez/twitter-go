@@ -6,3 +6,4 @@ database:
 
 jwt:
   secret-key: Ghsfdgdh2637JHFDHSJSKJSGSHBXVGFTSHUJIJS
+  expiresin: 1
