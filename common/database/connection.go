@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -12,15 +13,19 @@ import (
 MongoCN Object connection to database
 */
 var MongoCN = connectionDB()
-var url = "mongodb://localhost:27017/twitter"
 
-var clientOptions = options.Client().ApplyURI(url)
+var viper, err = config.Settings()
+
+func getClientOptions() *options.ClientOptions {
+	uriMongo := viper.GetString("database.uri")
+	return options.Client().ApplyURI(uriMongo)
+}
 
 /*
 	connectionDB: Connect with database
 */
 func connectionDB() *mongo.Client {
-	client, err := mongo.Connect(context.TODO(), clientOptions)
+	client, err := mongo.Connect(context.TODO(), getClientOptions())
 	if err != nil {
 		log.Fatal(err.Error())
 		return client
