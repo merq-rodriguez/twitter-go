@@ -1,16 +1,17 @@
-package auth
+package controllers
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
+	"github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt"
 	jwtResponse "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/types"
 	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/users"
+	. "github.com/merq-rodriguez/twitter-clone-backend-go/helpers"
+	authService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/services"
 	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/models"
-
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt"
+	userService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/services"
 )
 
 /*
@@ -24,23 +25,27 @@ func Signup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(user.Email) == 0 {
+	if IsEmpty(user.Email) {
 		http.Error(w, "Email required", HttpStatus.BAD_REQUEST)
 		return
 	}
 
-	if len(user.Password) < 8 {
+	if IsEmpty(user.Username) {
+		http.Error(w, "Username required", HttpStatus.BAD_REQUEST)
+	}
+
+	if IsEmpty(user.Password) {
 		http.Error(w, "Password length more of 8 characters", HttpStatus.BAD_REQUEST)
 		return
 	}
 
-	_, wanted, _ := users.UserAlreadyExist(user.Email)
+	_, wanted, _ := userService.UserAlreadyExist(user.Email)
 	if wanted == true {
 		http.Error(w, "A user already exists with this email", HttpStatus.BAD_REQUEST)
 		return
 	}
 
-	_, status, err := users.CreateUser(user)
+	_, status, err := userService.CreateUser(user)
 	if err != nil {
 		http.Error(w, "User not created: "+err.Error(), HttpStatus.BAD_REQUEST)
 		return
@@ -74,7 +79,7 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	document, exist := users.Signin(user.Email, user.Password)
+	document, exist := authService.Signin(user.Email, user.Password)
 
 	if exist == false {
 		http.Error(w, "Email or password invalid", HttpStatus.BAD_REQUEST)
