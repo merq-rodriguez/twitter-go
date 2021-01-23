@@ -3,11 +3,13 @@ package handlers
 import (
 	"log"
 	"net/http"
-	"os"
+	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
 	"github.com/merq-rodriguez/twitter-clone-backend-go/middlewares"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth"
+	authController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/controllers"
+	userController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/controllers"
 	"github.com/rs/cors"
 )
 
@@ -15,16 +17,44 @@ import (
 RunHandlers function: run handdlers with controllers enpoints
 */
 func RunHandlers() {
+	viper, err := config.Settings()
 	router := mux.NewRouter()
+	port := viper.GetInt("port")
 
-	router.HandleFunc("/signup", middlewares.CheckDB(auth.Signup)).Methods("POST")
-	router.HandleFunc("/signin", middlewares.CheckDB(auth.Signin)).Methods("POST")
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	if port == 0 {
+		port = 8080
 	}
 
+	if err != nil {
+		log.Fatal("Error loading configuration")
+	}
+
+	router.HandleFunc(
+		"/signup",
+		middlewares.CheckDB(authController.Signup),
+	).Methods("POST")
+
+	router.HandleFunc(
+		"/signin",
+		middlewares.CheckDB(authController.Signin),
+	).Methods("POST")
+
+	router.HandleFunc(
+		"/profile",
+		middlewares.CheckDB(
+			/* 	middlewares.JWTValidate( */ userController.GetProfile, /* ) */
+		),
+	).Methods("GET")
+
+	router.HandleFunc(
+		"/profile",
+		middlewares.CheckDB(
+			userController.UpdateUser,
+		),
+	).Methods("PUT")
+
 	handler := cors.AllowAll().Handler(router)
-	log.Fatal(http.ListenAndServe(":"+port, handler))
+	log.Println("App running in port: " + strconv.Itoa(port))
+	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), handler))
+
 }
