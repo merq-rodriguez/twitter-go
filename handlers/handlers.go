@@ -9,6 +9,7 @@ import (
 	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
 	"github.com/merq-rodriguez/twitter-clone-backend-go/middlewares"
 	authController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/controllers"
+	tweetController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/controllers"
 	userController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/controllers"
 	"github.com/rs/cors"
 )
@@ -52,6 +53,13 @@ func RunHandlers() {
 			userController.UpdateUser,
 		),
 	).Methods("PUT")
+
+	router.HandleFunc(
+		"/tweets",
+		middlewares.CheckDB(
+			tweetController.CreateTweet,
+		),
+	).Methods("POST")
 
 	handler := cors.AllowAll().Handler(router)
 	log.Println("App running in port: " + strconv.Itoa(port))
