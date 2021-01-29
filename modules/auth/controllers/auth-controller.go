@@ -7,6 +7,7 @@ import (
 
 	"github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt"
 	jwtResponse "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/types"
+	"github.com/merq-rodriguez/twitter-clone-backend-go/common/response/cookies"
 	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
 	. "github.com/merq-rodriguez/twitter-clone-backend-go/helpers"
 	authService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/services"
@@ -96,15 +97,9 @@ func Signin(w http.ResponseWriter, r *http.Request) {
 		AccessToken: jwtKey,
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 
 	expiresIn := time.Now().Add(24 * time.Hour)
-
-	http.SetCookie(w, &http.Cookie{
-		Name:    "token",
-		Value:   jwtKey,
-		Expires: expiresIn,
-	})
+	cookies.AddCookieToken(w, jwtKey, expiresIn)
 }
