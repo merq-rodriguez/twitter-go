@@ -15,7 +15,6 @@ GetProfile controller for get profile user
 */
 func GetProfile(w http.ResponseWriter, r *http.Request) {
 	username := r.URL.Query().Get("username")
-	fmt.Println(username)
 	if len(username) < 1 {
 		http.Error(w, "Username paremeter not provided", HttpStatus.BAD_REQUEST)
 	}
@@ -26,7 +25,6 @@ func GetProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(HttpStatus.CREATED)
 	json.NewEncoder(w).Encode(profile)
 }
