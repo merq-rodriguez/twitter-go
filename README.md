@@ -1,7 +1,15 @@
 # Clone Twitter Backend Go + MongoDB + JWT
 
+# Install Gin
+```
+ go get github.com/codegangsta/gin
+```
 
-# Run
+# Run live reload
+```bash
+gin --port 4000 run main.go
+```
+ó
 ```bash
 go run main.go
 ```
