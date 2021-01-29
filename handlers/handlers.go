@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
+	. "github.com/merq-rodriguez/twitter-clone-backend-go/common/context"
 	"github.com/merq-rodriguez/twitter-clone-backend-go/middlewares"
 	authController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/controllers"
 	tweetController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/controllers"
@@ -41,10 +42,7 @@ func RunHandlers() {
 	).Methods("POST")
 
 	router.HandleFunc(
-		"/profile",
-		middlewares.CheckDB(
-			/* 	middlewares.JWTValidate( */ userController.GetProfile, /* ) */
-		),
+		"/profile", middlewares.CheckDB(middlewares.AuthJWT(userController.GetProfile)),
 	).Methods("GET")
 
 	router.HandleFunc(
@@ -61,7 +59,17 @@ func RunHandlers() {
 		),
 	).Methods("POST")
 
-	handler := cors.AllowAll().Handler(router)
+	router.HandleFunc(
+		"/tweets",
+		middlewares.CheckDB(
+			tweetController.GetTweetsByUserID,
+		),
+	).Methods("GET")
+
+	handler := AddContext(
+		cors.AllowAll().Handler(router),
+	)
+
 	log.Println("App running in port: " + strconv.Itoa(port))
 	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), handler))
 
