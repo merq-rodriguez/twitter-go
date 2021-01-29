@@ -10,6 +10,6 @@ Clain struct type for processing JWT
 */
 type Claim struct {
 	Email string             `json:"email"`
-	ID    primitive.ObjectID `bson:"_id, omitempty" json:"id"`
+	ID    primitive.ObjectID `bson:"_id, omitempty" json:"_id"`
 	jwt.StandardClaims
 }
