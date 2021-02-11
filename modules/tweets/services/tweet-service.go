@@ -2,11 +2,10 @@ package services
 
 import (
 	"context"
-	"log"
 	"time"
 
-	conn "github.com/merq-rodriguez/twitter-clone-backend-go/common/database"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/models"
+	conn "github.com/merq-rodriguez/twitter-go/common/database"
+	. "github.com/merq-rodriguez/twitter-go/modules/tweets/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,13 +16,13 @@ var db = conn.MongoCN.Database("twitter")
 /*
 GetTweetsByUserID function for obtain tweets by user
 */
-func GetTweetsByUserID(ID string, page int64) ([]*Tweet, bool) {
+func GetTweetsByUserID(ID string, page int64) ([]*Tweet, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
-	col := db.Collection("tweet")
-
 	var results []*Tweet
+
+	col := db.Collection("tweet")
 
 	query := bson.M{
 		"userId": ID,
@@ -37,42 +36,40 @@ func GetTweetsByUserID(ID string, page int64) ([]*Tweet, bool) {
 	cursor, err := col.Find(ctx, query, opts)
 
 	if err != nil {
-		log.Fatal(err.Error())
-		return results, false
+		return results, err
 	}
 
 	for cursor.Next(context.TODO()) {
 		var registry Tweet
 		err := cursor.Decode(&registry)
 		if err != nil {
-			return results, false
+			return results, err
 		}
 
 		results = append(results, &registry)
 	}
-	return results, true
+	return results, nil
 }
 
 /*
 CreateTweet function for add news tweets
 */
-func CreateTweet(t Tweet) (string, bool, error) {
+func CreateTweet(t Tweet) (Tweet, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	col := db.Collection("tweet")
 
 	registry := bson.M{
-		"userid":    t.UserID,
+		"userId":    t.UserID,
 		"message":   t.Message,
 		"timestamp": t.Timestamp,
 	}
 
 	result, err := col.InsertOne(ctx, registry)
 	if err != nil {
-		return "", false, err
+		return Tweet{}, err
 	}
-
-	objectID, _ := result.InsertedID.(primitive.ObjectID)
-	return objectID.String(), true, nil
+	t.ID = result.InsertedID.(primitive.ObjectID)
+	return t, nil
 }
