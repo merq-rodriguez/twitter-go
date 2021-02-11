@@ -1,58 +1,34 @@
 package controllers
 
 import (
-	"encoding/json"
-	"fmt"
 	"net/http"
 
-	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/models"
-	userService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/services"
+	"github.com/labstack/echo"
+	. "github.com/merq-rodriguez/twitter-go/common/response/errors"
+	. "github.com/merq-rodriguez/twitter-go/modules/users/dto"
+
+	userService "github.com/merq-rodriguez/twitter-go/modules/users/services"
 )
 
-/*
-GetProfile controller for get profile user
-*/
-func GetProfile(w http.ResponseWriter, r *http.Request) {
-	username := r.URL.Query().Get("username")
-	if len(username) < 1 {
-		http.Error(w, "Username paremeter not provided", HttpStatus.BAD_REQUEST)
-	}
-
-	profile, err := userService.GetProfile(username)
-	if err != nil {
-		http.Error(w, "Profile not exists", HttpStatus.NOT_FOUND)
-		return
-	}
-
-	w.WriteHeader(HttpStatus.CREATED)
-	json.NewEncoder(w).Encode(profile)
-}
+type UserController struct{}
 
 /*
 UpdateUser controller for update user profile
 */
-func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	ID := r.URL.Query().Get("id")
-	var u User
+func (h *UserController) UpdateUser(c echo.Context) error {
+	ID := c.QueryParam("id")
+	var dto UpdateUserDTO
 
-	err := json.NewDecoder(r.Body).Decode(&u)
-	fmt.Println(u)
-
+	err := dto.Validate()
 	if err != nil {
-		http.Error(w, "Invalid data user"+err.Error(), HttpStatus.BAD_REQUEST)
+		return BadRequestError(c, "Fields required", err)
 	}
 
-	var status bool
-
-	status, err = userService.UpdateUser(ID, u)
+	u := dto.ConvertToUser()
+	user, err := userService.UpdateUser(ID, u)
 	if err != nil {
-		http.Error(w, "User not update"+err.Error(), HttpStatus.BAD_REQUEST)
-		return
+		return BadRequestError(c, "User not update", err)
 	}
 
-	if status == false {
-	}
-
-	w.WriteHeader(HttpStatus.CREATED)
+	return c.JSON(http.StatusCreated, user)
 }

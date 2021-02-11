@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/database"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/helpers"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/crypt"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/models"
+	"github.com/merq-rodriguez/twitter-go/common/database"
+	. "github.com/merq-rodriguez/twitter-go/helpers"
+	"github.com/merq-rodriguez/twitter-go/modules/crypt"
+	. "github.com/merq-rodriguez/twitter-go/modules/users/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -16,24 +16,22 @@ import (
 var db = database.MongoCN.Database("twitter")
 
 /*
-GetProfile function for obtain profile data of user
-@Params: ID string
+FindUserByEmail function: find user by email
+@Params email: string
 */
-func GetProfile(username string) (User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+func FindUserByEmail(email string) (User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	var user User
 	col := db.Collection("users")
-
-	query := bson.M{"username": username}
+	query := bson.M{"email": email}
 
 	err := col.FindOne(ctx, query).Decode(&user)
-	user.Password = ""
-
 	if err != nil {
 		return user, err
 	}
+
 	return user, nil
 }
 
@@ -41,29 +39,29 @@ func GetProfile(username string) (User, error) {
 CreateUser function: register a user
 @Params u: models.User
 */
-func CreateUser(u User) (string, bool, error) {
+func CreateUser(user User) (User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	col := db.Collection("users")
-	u.ID = primitive.NewObjectID()
 
-	u.Password, _ = crypt.HashPassword(u.Password)
-	result, err := col.InsertOne(ctx, u)
+	user.Password, _ = crypt.HashPassword(user.Password)
+	user.ID = primitive.NewObjectID()
+	result, err := col.InsertOne(ctx, user)
 
 	if err != nil {
-		return "", false, err
+		return User{}, err
 	}
 
-	ObjID, _ := result.InsertedID.(primitive.ObjectID)
-	return ObjID.String(), true, nil
+	user.ID = result.InsertedID.(primitive.ObjectID)
+	return user, nil
 }
 
 /*
 UpdateUser function: update user profile
 @Params u: models.User
 */
-func UpdateUser(ID string, u User) (bool, error) {
+func UpdateUser(ID string, u User) (User, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
@@ -105,31 +103,7 @@ func UpdateUser(ID string, u User) (bool, error) {
 	_, err := col.UpdateOne(ctx, queryFilter, queryUpdate)
 
 	if err != nil {
-		return false, err
+		return User{}, err
 	}
-
-	return true, nil
-}
-
-/*
-UserAlreadyExist function: find user by email
-@Params email: string
-*/
-func UserAlreadyExist(email string) (User, bool, string) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-
-	col := db.Collection("users")
-	query := bson.M{"email": email}
-
-	var result User
-
-	err := col.FindOne(ctx, query).Decode(&result)
-	ID := result.ID.Hex()
-
-	if err != nil {
-		return result, false, ID
-	}
-
-	return result, true, ID
+	return u, nil
 }
