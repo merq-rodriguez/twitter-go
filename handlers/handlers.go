@@ -2,25 +2,23 @@ package handlers
 
 import (
 	"log"
-	"net/http"
 	"strconv"
 
-	"github.com/gorilla/mux"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/common/context"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/middlewares"
-	authController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/controllers"
-	tweetController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/controllers"
-	userController "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/controllers"
-	"github.com/rs/cors"
+	"github.com/labstack/echo"
+	"github.com/merq-rodriguez/twitter-go/common/config"
+
+	. "github.com/merq-rodriguez/twitter-go/modules/account"
+	. "github.com/merq-rodriguez/twitter-go/modules/auth"
+	. "github.com/merq-rodriguez/twitter-go/modules/tweets"
+	. "github.com/merq-rodriguez/twitter-go/modules/users"
 )
 
 /*
 RunHandlers function: run handdlers with controllers enpoints
 */
 func RunHandlers() {
+	e := echo.New()
 	viper, err := config.Settings()
-	router := mux.NewRouter()
 	port := viper.GetInt("port")
 
 	if port == 0 {
@@ -31,46 +29,10 @@ func RunHandlers() {
 		log.Fatal("Error loading configuration")
 	}
 
-	router.HandleFunc(
-		"/signup",
-		middlewares.CheckDB(authController.Signup),
-	).Methods("POST")
+	UserHandler(e)
+	AuthHandler(e)
+	TweetHandler(e)
+	AccountHandler(e)
 
-	router.HandleFunc(
-		"/signin",
-		middlewares.CheckDB(authController.Signin),
-	).Methods("POST")
-
-	router.HandleFunc(
-		"/profile", middlewares.CheckDB(middlewares.AuthJWT(userController.GetProfile)),
-	).Methods("GET")
-
-	router.HandleFunc(
-		"/profile",
-		middlewares.CheckDB(
-			userController.UpdateUser,
-		),
-	).Methods("PUT")
-
-	router.HandleFunc(
-		"/tweets",
-		middlewares.CheckDB(
-			tweetController.CreateTweet,
-		),
-	).Methods("POST")
-
-	router.HandleFunc(
-		"/tweets",
-		middlewares.CheckDB(
-			tweetController.GetTweetsByUserID,
-		),
-	).Methods("GET")
-
-	handler := AddContext(
-		cors.AllowAll().Handler(router),
-	)
-
-	log.Println("App running in port: " + strconv.Itoa(port))
-	log.Fatal(http.ListenAndServe(":"+strconv.Itoa(port), handler))
-
+	e.Logger.Fatal(e.Start(":" + strconv.Itoa(port)))
 }
