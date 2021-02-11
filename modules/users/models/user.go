@@ -1,6 +1,7 @@
 package models
 
 import (
+	"reflect"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -22,4 +23,8 @@ type User struct {
 	Location  string             `bson:"location"    json:"location, omitempty"`
 	Website   string             `bson:"website"     json:"website, omitempty"`
 	Biography string             `bson:"biography"   json:"biography, omitempty"`
+}
+
+func (u User) IsEmpty() bool {
+	return reflect.DeepEqual(u, User{})
 }
