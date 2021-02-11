@@ -1,18 +1,20 @@
 package jwt
 
 import (
+	"strconv"
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	constant "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/constants"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/models"
+	constant "github.com/merq-rodriguez/twitter-go/common/jwt/constants"
+	"github.com/merq-rodriguez/twitter-go/modules/users/models"
 )
 
 /*
 CreateToken function for generate Json Web Token
 */
 func CreateToken(user models.User) (string, error) {
-	var expiresin = time.Duration(constant.EXPIRES_IN)
+	value, err := strconv.ParseInt(constant.ExpiresIn, 10, 64)
+	var expiresin = time.Duration(value)
 	secretKey := []byte(constant.SECRET_KEY)
 
 	payload := jwt.MapClaims{
