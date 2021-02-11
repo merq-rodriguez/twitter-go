@@ -1,73 +1,72 @@
 package controllers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strconv"
 	"time"
 
-	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/models"
-	tweetService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/tweets/services"
+	"github.com/labstack/echo"
+	. "github.com/merq-rodriguez/twitter-go/common/response/errors"
+	. "github.com/merq-rodriguez/twitter-go/modules/tweets/dto"
+	. "github.com/merq-rodriguez/twitter-go/modules/tweets/models"
+	tweetService "github.com/merq-rodriguez/twitter-go/modules/tweets/services"
 )
+
+type TweetController struct{}
 
 /*
 GetTweetsByUserID function controller
 */
-func GetTweetsByUserID(w http.ResponseWriter, r *http.Request) {
-	ID := r.URL.Query().Get("id")
-	page := r.URL.Query().Get("page")
+func (t *TweetController) GetTweetsByUserID(c echo.Context) error {
+	ID := c.QueryParam("id")
+	page := c.QueryParam("page")
 
 	if len(ID) < 1 {
-		http.Error(w, "Id parameter is required", HttpStatus.NOT_ACCEPTABLE)
-		return
+		return BadRequestError(c, "Id parameter is required", nil)
 	}
 	if len(page) < 1 {
-		http.Error(w, "Page parameter is required", HttpStatus.NOT_ACCEPTABLE)
-		return
+		return BadRequestError(c, "Page parameter is required", nil)
 	}
 
 	_page, err := strconv.Atoi(page)
 	if err != nil {
-		http.Error(w, "The page parameter must be greater than 0", HttpStatus.NOT_ACCEPTABLE)
-		return
+		return NotAcceptableError(c, "The page parameter must be greater than 0", nil)
 	}
 
 	pag := int64(_page)
-	results, success := tweetService.GetTweetsByUserID(ID, pag)
+	results, err := tweetService.GetTweetsByUserID(ID, pag)
 
-	if success == false {
-		http.Error(w, "Error read tweets", HttpStatus.NOT_ACCEPTABLE)
-		return
+	if err != nil {
+		return BadRequestError(c, "Error read tweets", nil)
 	}
 
-	w.WriteHeader(HttpStatus.OK)
-	json.NewEncoder(w).Encode(results)
+	return c.JSON(http.StatusOK, results)
 }
 
 /*
 CreateTweet function controller
 */
-func CreateTweet(w http.ResponseWriter, r *http.Request) {
+func (t TweetController) CreateTweet(c echo.Context) error {
 	var tweet Tweet
-	err := json.NewDecoder(r.Body).Decode(&tweet)
+	dto := CreateTweetDTO{}
 
-	registry := Tweet{
-		UserID:    tweet.UserID,
-		Message:   tweet.Message,
-		Timestamp: time.Now(),
-	}
-
-	_, status, err := tweetService.CreateTweet(registry)
+	err := dto.Decoder(c.Request().Body)
 	if err != nil {
-		http.Error(w, "Error tweet not created "+err.Error(), HttpStatus.BAD_REQUEST)
-		return
+		return BadRequestError(c, "Error fields data", err)
 	}
 
-	if status == false {
-		http.Error(w, "Tweet not created", HttpStatus.BAD_REQUEST)
-		return
+	err = dto.Validate()
+	if err != nil {
+		return BadRequestError(c, "Fields required", err)
 	}
 
-	w.WriteHeader(HttpStatus.CREATED)
+	tweet = dto.ConvertToTweet()
+	tweet.Timestamp = time.Now()
+
+	result, err := tweetService.CreateTweet(tweet)
+	if err != nil {
+		return BadRequestError(c, "Tweet not created", err)
+	}
+
+	return c.JSON(http.StatusCreated, result)
 }
