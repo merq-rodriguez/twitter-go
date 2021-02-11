@@ -1,105 +1,78 @@
 package controllers
 
 import (
-	"encoding/json"
+	"log"
 	"net/http"
-	"time"
 
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt"
-	jwtResponse "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/types"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/response/cookies"
-	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/helpers"
-	authService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/auth/services"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/models"
-	userService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/services"
+	"github.com/labstack/echo"
+	"github.com/merq-rodriguez/twitter-go/common/jwt"
+	"go.mongodb.org/mongo-driver/mongo"
+
+	. "github.com/merq-rodriguez/twitter-go/common/jwt/types"
+	. "github.com/merq-rodriguez/twitter-go/common/response/errors"
+
+	. "github.com/merq-rodriguez/twitter-go/modules/auth/dto"
+	authService "github.com/merq-rodriguez/twitter-go/modules/auth/services"
+	. "github.com/merq-rodriguez/twitter-go/modules/users/models"
+	userService "github.com/merq-rodriguez/twitter-go/modules/users/services"
 )
 
-/*
-Signup function controller for create user
-*/
-func Signup(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user)
+type AuthController struct{}
+
+func (h *AuthController) SignIn(c echo.Context) error {
+	dto := SignInDTO{
+		Email:    c.FormValue("email"),
+		Password: c.FormValue("password"),
+	}
+
+	err := dto.Validate()
 	if err != nil {
-		http.Error(w, "Error receive data user: "+err.Error(), HttpStatus.BAD_REQUEST)
-		return
+		return BadRequestError(c, "Fields required", err)
 	}
 
-	if IsEmpty(user.Email) {
-		http.Error(w, "Email required", HttpStatus.BAD_REQUEST)
-		return
-	}
-
-	if IsEmpty(user.Username) {
-		http.Error(w, "Username required", HttpStatus.BAD_REQUEST)
-	}
-
-	if IsEmpty(user.Password) {
-		http.Error(w, "Password length more of 8 characters", HttpStatus.BAD_REQUEST)
-		return
-	}
-
-	_, wanted, _ := userService.UserAlreadyExist(user.Email)
-	if wanted == true {
-		http.Error(w, "A user already exists with this email", HttpStatus.BAD_REQUEST)
-		return
-	}
-
-	_, status, err := userService.CreateUser(user)
+	user, err := authService.Signin(dto.Email, dto.Password)
 	if err != nil {
-		http.Error(w, "User not created: "+err.Error(), HttpStatus.BAD_REQUEST)
-		return
+		return UnauthorizedError(c, "Email or password invalid", nil)
 	}
 
-	if status == false {
-		http.Error(w, "No se ha logrado insertar el registro del usuario", HttpStatus.BAD_REQUEST)
-		return
+	jwtKey, err := jwt.CreateToken(user)
+	if err != nil {
+		return InternalServerError(c, "Error creating token", nil)
 	}
 
-	w.WriteHeader(http.StatusCreated)
+	response := new(JsonWebToken)
+	response.AccessToken = jwtKey
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"token": response.AccessToken,
+	})
 }
 
-/*
-Signin function controller for login user
-*/
-func Signin(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("content-type", "application/json")
+func (h *AuthController) SignUp(c echo.Context) error {
+	var user User
+	dto := SignUpDTO{}
+	err := dto.Decoder(c.Request().Body)
 
-	var user models.User
+	log.Println(dto)
+	if err != nil {
+		return BadRequestError(c, "Fields required", err)
+	}
 
-	err := json.NewDecoder(r.Body).Decode(&user)
+	user, err = userService.FindUserByEmail(dto.Email)
+	if !user.IsEmpty() {
+		return BadRequestError(c, "User exists with email", nil)
+	}
+
+	if err != mongo.ErrNoDocuments {
+		return BadRequestError(c, "", err)
+	}
+
+	user = dto.ConvertToUser()
+	userCreated, err := userService.CreateUser(user)
 
 	if err != nil {
-		http.Error(w, "Credentials Invalid "+err.Error(), HttpStatus.UNAUTHORIZED)
-		return
+		return BadRequestError(c, "User not created", err)
 	}
 
-	if len(user.Email) == 0 {
-		http.Error(w, "Email required", HttpStatus.BAD_REQUEST)
-		return
-	}
-
-	document, exist := authService.Signin(user.Email, user.Password)
-
-	if exist == false {
-		http.Error(w, "Email or password invalid", HttpStatus.BAD_REQUEST)
-		return
-	}
-
-	jwtKey, err := jwt.CreateToken(document)
-	if err != nil {
-		http.Error(w, "Error creating token", HttpStatus.INTERNAL_SERVER_ERROR)
-		return
-	}
-
-	response := jwtResponse.JsonWebToken{
-		AccessToken: jwtKey,
-	}
-
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(response)
-
-	expiresIn := time.Now().Add(24 * time.Hour)
-	cookies.AddCookieToken(w, jwtKey, expiresIn)
+	return c.JSON(http.StatusCreated, userCreated)
 }
