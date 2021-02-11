@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/dgrijalva/jwt-go"
-	constant "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/constants"
-	userService "github.com/merq-rodriguez/twitter-clone-backend-go/modules/users/services"
+	constant "github.com/merq-rodriguez/twitter-go/common/jwt/constants"
+	userService "github.com/merq-rodriguez/twitter-go/modules/users/services"
 
-	. "github.com/merq-rodriguez/twitter-clone-backend-go/common/jwt/types"
+	. "github.com/merq-rodriguez/twitter-go/common/jwt/types"
 )
 
 var Email string
@@ -26,7 +26,7 @@ func validateFormatToken(bearerToken string, claims *Claim) (string, bool) {
 
 /*decodeToken function*/
 func decodeToken(tk string, claims *Claim) (*jwt.Token, error) {
-	secretKey := []byte(constant.SECRET_KEY)
+	secretKey := []byte(constant.SecretKey)
 	return jwt.ParseWithClaims(
 		tk,
 		claims,
@@ -47,14 +47,18 @@ func ValidateToken(bearerToken string) (*Claim, bool, error) {
 
 	tkn, err := decodeToken(token, claims)
 
-	if err == nil {
-		_, wanted, _ := userService.UserAlreadyExist(claims.Email)
-		if wanted == true {
-			Email = claims.Email
-			UserID = claims.ID.Hex()
-		}
-		return claims, wanted, nil
+	if err != nil {
+		return nil, false, err
 	}
+
+	_, err = userService.FindUserByEmail(claims.Email)
+
+	if err != nil {
+		return nil, false, err
+	}
+
+	Email = claims.Email
+	UserID = claims.ID.Hex()
 
 	if !tkn.Valid {
 		return claims, false, errors.New("Invalid Token")
