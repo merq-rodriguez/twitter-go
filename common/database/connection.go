@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
+	"github.com/merq-rodriguez/twitter-go/common/config"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
