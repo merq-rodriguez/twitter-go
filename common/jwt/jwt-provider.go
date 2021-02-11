@@ -15,7 +15,7 @@ CreateToken function for generate Json Web Token
 func CreateToken(user models.User) (string, error) {
 	value, err := strconv.ParseInt(constant.ExpiresIn, 10, 64)
 	var expiresin = time.Duration(value)
-	secretKey := []byte(constant.SECRET_KEY)
+	secretKey := []byte(constant.SecretKey)
 
 	payload := jwt.MapClaims{
 		"email": user.Email,

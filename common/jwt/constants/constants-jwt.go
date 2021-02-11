@@ -1,11 +1,15 @@
 package constants
 
-import "github.com/merq-rodriguez/twitter-clone-backend-go/common/config"
+import (
+	"strconv"
+
+	"github.com/merq-rodriguez/twitter-go/common/config"
+)
 
 var viper, _ = config.Settings()
 
-/*SECRET_KEY JWT */
-var SECRET_KEY = viper.GetString("jwt.secret-key")
+/*SecretKey JWT */
+var SecretKey = viper.GetString("jwt.secret-key")
 
-/*EXPIRES_IN JWT */
-var EXPIRES_IN = viper.GetInt64("jwt.expiresin")
+/*ExpiresIn JWT */
+var ExpiresIn = strconv.Itoa(viper.GetInt("jwt.expiresin"))
