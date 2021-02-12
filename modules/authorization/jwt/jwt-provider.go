@@ -5,7 +5,7 @@ import (
 	"time"
 
 	jwt "github.com/dgrijalva/jwt-go"
-	constant "github.com/merq-rodriguez/twitter-go/common/jwt/constants"
+	"github.com/merq-rodriguez/twitter-go/modules/authorization/jwt/constants"
 	"github.com/merq-rodriguez/twitter-go/modules/users/models"
 )
 
@@ -13,15 +13,16 @@ import (
 CreateToken function for generate Json Web Token
 */
 func CreateToken(user models.User) (string, error) {
-	value, err := strconv.ParseInt(constant.ExpiresIn, 10, 64)
+	value, err := strconv.ParseInt(constants.ExpiresIn, 10, 64)
 	var expiresin = time.Duration(value)
-	secretKey := []byte(constant.SecretKey)
+	secretKey := []byte(constants.SecretKey)
 
 	payload := jwt.MapClaims{
-		"email": user.Email,
-		"name":  user.Name,
-		"_id":   user.ID.Hex(),
-		"exp":   time.Now().Add(time.Hour * expiresin).Unix(),
+		"email":    user.Email,
+		"username": user.Username,
+		"name":     user.Name,
+		"_id":      user.ID.Hex(),
+		"exp":      time.Now().Add(time.Hour * expiresin).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, payload)
