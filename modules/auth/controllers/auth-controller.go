@@ -5,11 +5,11 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo"
-	"github.com/merq-rodriguez/twitter-go/common/jwt"
+	"github.com/merq-rodriguez/twitter-go/modules/authorization/jwt"
 	"go.mongodb.org/mongo-driver/mongo"
 
-	. "github.com/merq-rodriguez/twitter-go/common/jwt/types"
 	. "github.com/merq-rodriguez/twitter-go/common/response/errors"
+	. "github.com/merq-rodriguez/twitter-go/modules/authorization/jwt/models"
 
 	. "github.com/merq-rodriguez/twitter-go/modules/auth/dto"
 	authService "github.com/merq-rodriguez/twitter-go/modules/auth/services"
@@ -43,7 +43,7 @@ func (h *AuthController) SignIn(c echo.Context) error {
 	response := new(JsonWebToken)
 	response.AccessToken = jwtKey
 
-	return c.JSON(http.StatusOK, map[string]string{
+	return c.JSON(http.StatusOK, echo.Map{
 		"token": response.AccessToken,
 	})
 }
