@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	"github.com/merq-rodriguez/twitter-go/common/config"
 
 	. "github.com/merq-rodriguez/twitter-go/modules/account"
@@ -18,6 +19,7 @@ RunHandlers function: run handdlers with controllers enpoints
 */
 func RunHandlers() {
 	e := echo.New()
+	e.Use(middleware.CORS())
 	viper, err := config.Settings()
 	port := viper.GetInt("port")
 
@@ -34,5 +36,5 @@ func RunHandlers() {
 	TweetHandler(e)
 	AccountHandler(e)
 
-	e.Logger.Fatal(e.Start(":" + strconv.Itoa(port)))
+	e.Start(":" + strconv.Itoa(port))
 }
