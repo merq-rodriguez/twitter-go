@@ -2,42 +2,55 @@ package middlewares
 
 import (
 	"net/http"
+	"strconv"
+	"sync"
+	"time"
 
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/database"
-	HttpStatus "github.com/merq-rodriguez/twitter-clone-backend-go/common/response/http"
+	"github.com/labstack/echo"
 )
 
-/*
-HandlerRequest type for manage request error
-*/
-type HandlerRequest func(http.ResponseWriter, *http.Request) error
+type (
+	Stats struct {
+		Uptime       time.Time      `json:"uptime"`
+		RequestCount uint64         `json:"requestCount"`
+		Statuses     map[string]int `json:"statuses"`
+		mutex        sync.RWMutex
+	}
+)
 
-/*
-CheckDB middleware for show status of database
-*/
-func CheckDB(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if database.CheckConnection() == false {
-			http.Error(w, "Failed connection with database", HttpStatus.INTERNAL_SERVER_ERROR)
-			return
-		}
-
-		next.ServeHTTP(w, r)
+func NewStats() *Stats {
+	return &Stats{
+		Uptime:   time.Now(),
+		Statuses: map[string]int{},
 	}
 }
 
-func (fn HandlerRequest) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := fn(w, r) //Call handler function
-	if err == nil {
-		return
+// Process is the middleware function.
+func (s *Stats) Process(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		if err := next(c); err != nil {
+			c.Error(err)
+		}
+		s.mutex.Lock()
+		defer s.mutex.Unlock()
+		s.RequestCount++
+		status := strconv.Itoa(c.Response().Status)
+		s.Statuses[status]++
+		return nil
 	}
+}
 
-	if database.CheckConnection() == false {
-		http.Error(w, "Failed connection with database", HttpStatus.INTERNAL_SERVER_ERROR)
-		return
+// Handle is the endpoint to get stats.
+func (s *Stats) Handle(c echo.Context) error {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
+	return c.JSON(http.StatusOK, s)
+}
+
+// ServerHeader middleware adds a `Server` header to the response.
+func ServerHeader(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		c.Response().Header().Set(echo.HeaderServer, "Echo/3.0")
+		return next(c)
 	}
-
-	fn.ServeHTTP(w, r)
-	//Error handling...
-
 }

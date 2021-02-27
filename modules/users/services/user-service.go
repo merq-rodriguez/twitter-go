@@ -1,9 +1,7 @@
 package users
 
 import (
-	"context"
-	"time"
-
+	. "github.com/merq-rodriguez/twitter-go/common/context"
 	"github.com/merq-rodriguez/twitter-go/common/database"
 	. "github.com/merq-rodriguez/twitter-go/helpers"
 	"github.com/merq-rodriguez/twitter-go/modules/crypt"
@@ -11,16 +9,49 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var db = database.MongoCN.Database("twitter")
+
+func SearchUsers(s SearchUser) ([]*User, error) {
+	ctx, cancel := GetContext()
+	defer cancel()
+
+	var results []*User
+
+	col := db.Collection("users")
+	opts := options.Find()
+	opts.SetSkip((s.Page - 1) * 20)
+	opts.SetLimit(20)
+
+	query := bson.M{
+		"name": bson.M{"$regex": `(?i)` + s.TextSearch},
+	}
+
+	cursor, err := col.Find(ctx, query, opts)
+	if err != nil {
+		return nil, err
+	}
+
+	for cursor.Next(ctx) {
+		var us User
+		err := cursor.Decode(us)
+		if err != nil {
+			return nil, err
+		}
+
+		results = append(results, &us)
+	}
+	return results, nil
+}
 
 /*
 FindUserByEmail function: find user by email
 @Params email: string
 */
 func FindUserByEmail(email string) (User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := GetContext()
 	defer cancel()
 
 	var user User
@@ -40,7 +71,7 @@ CreateUser function: register a user
 @Params u: models.User
 */
 func CreateUser(user User) (User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := GetContext()
 	defer cancel()
 
 	col := db.Collection("users")
@@ -62,7 +93,7 @@ UpdateUser function: update user profile
 @Params u: models.User
 */
 func UpdateUser(ID string, u User) (User, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	ctx, cancel := GetContext()
 	defer cancel()
 
 	col := db.Collection("users")

@@ -25,4 +25,6 @@ func AccountHandler(e *echo.Echo) {
 
 	r.Use(middleware.JWTWithConfig(config))
 	r.GET("/profile", account.GetProfile)
+	r.PUT("/profile", account.UpdateAvatar)
+
 }

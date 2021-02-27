@@ -12,4 +12,5 @@ const (
 func UserHandler(e *echo.Echo) {
 	users := &UserController{}
 	e.PUT(prefix, users.UpdateUser)
+	e.GET(prefix, users.SearchUsers)
 }

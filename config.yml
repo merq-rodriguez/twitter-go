@@ -7,3 +7,10 @@ database:
 jwt:
   secret-key: Ghsfdgdh2637JHFDHSJSKJSGSHBXVGFTSHUJIJS
   expiresin: 1
+
+http:
+  url: http://localhost:4000/
+
+uploads:
+  avatars: uploads/avatars/
+  banners: uploads/banners/

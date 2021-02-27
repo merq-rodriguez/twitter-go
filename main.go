@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
-	"github.com/merq-rodriguez/twitter-clone-backend-go/common/database"
-	"github.com/merq-rodriguez/twitter-clone-backend-go/handlers"
+	"github.com/merq-rodriguez/twitter-go/common/database"
+	"github.com/merq-rodriguez/twitter-go/handlers"
 )
 
 func main() {
@@ -12,5 +12,6 @@ func main() {
 		log.Fatal("Database not connected")
 		return
 	}
+
 	handlers.RunHandlers()
 }

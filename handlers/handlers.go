@@ -10,6 +10,7 @@ import (
 
 	. "github.com/merq-rodriguez/twitter-go/modules/account"
 	. "github.com/merq-rodriguez/twitter-go/modules/auth"
+	. "github.com/merq-rodriguez/twitter-go/modules/followers"
 	. "github.com/merq-rodriguez/twitter-go/modules/tweets"
 	. "github.com/merq-rodriguez/twitter-go/modules/users"
 )
@@ -31,10 +32,13 @@ func RunHandlers() {
 		log.Fatal("Error loading configuration")
 	}
 
-	UserHandler(e)
 	AuthHandler(e)
+	UserHandler(e)
 	TweetHandler(e)
 	AccountHandler(e)
+	FollowerHandler(e)
+
+	e.Static("/", "uploads")
 
 	e.Start(":" + strconv.Itoa(port))
 }

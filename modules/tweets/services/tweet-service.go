@@ -73,3 +73,19 @@ func CreateTweet(t Tweet) (Tweet, error) {
 	t.ID = result.InsertedID.(primitive.ObjectID)
 	return t, nil
 }
+
+func DeleteTweet(ID string) (string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	col := db.Collection("tweet")
+
+	objectID, _ := primitive.ObjectIDFromHex(ID)
+
+	query := bson.M{
+		"_id": objectID,
+	}
+
+	_, err := col.DeleteOne(ctx, query)
+	return ID, err
+}

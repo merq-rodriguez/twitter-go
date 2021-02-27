@@ -32,3 +32,20 @@ go run main.go
     "website": "www.website.com"
 }
 ```
+
+```
+sonar-scanner \
+  -Dsonar.projectKey=Clon-Twitter \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=4579e90050f27193bb757a5c0c6c55bc42cb6f93
+```
+
+
+
+docker run \
+    --rm \
+    -e SONAR_HOST_URL="http://127.0.0.1:9000" \
+    -e SONAR_LOGIN="4579e90050f27193bb757a5c0c6c55bc42cb6f93" \
+    -v "$HOME/Documentos/Projects/GoProjects/src/github.com/merq-rodriguez/twitter-go:/usr/src" \
+    sonarsource/sonar-scanner-cli

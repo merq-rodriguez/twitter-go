@@ -4,7 +4,12 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"time"
 )
+
+func GetContext() (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.Background(), 15*time.Second)
+}
 
 /*AddContext for add context to handlers routes */
 func AddContext(next http.Handler) http.Handler {
